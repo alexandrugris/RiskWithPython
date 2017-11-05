@@ -1,6 +1,6 @@
 import math
 import random
-
+import statistics as stats
 import matplotlib.pyplot as plt
 
 
@@ -70,9 +70,9 @@ def normalize(lst) -> list:
     return r
 
 
-def probabilities_to_odds(probs: list, set_payout: float):
+def probabilities_to_odds(probs: list, _set_payout: float):
     probs = normalize([x if x > 0.1 else 0.1 for x in probs])
-    return [set_payout / p for p in probs]
+    return [_set_payout / p for p in probs]
 
 
 def fmt_f(x: float) -> str:
@@ -83,7 +83,7 @@ def fmt_list_f(l: list) -> str:
     return "[" + ", ".join([fmt_f(x) for x in l]) + "]"
 
 
-#### place bet functions
+# place bet functions
 def place_bet_random(max_bet):
     """Places a random bet, with probabilities of placing the bet for each outcome
     hardcoded in the first line of the function"""
@@ -92,7 +92,6 @@ def place_bet_random(max_bet):
 
     for i in range(0, number_of_bets):
         money = random.random() * max_bet()
-        bet = [0, 0, 0]
 
         # bet according to local preferences
         f = random.random()
@@ -109,10 +108,10 @@ def place_bet_max_stake(max_bet):
     """Places a bet on the highest stake"""
 
     for i in range(0, number_of_bets):
-        bet = [0, 0, 0]
+        _bet = [0, 0, 0]
         ix = odds_evolution[-1].index(max(odds_evolution[-1]))
-        bet[ix] = max_bet()
-        yield bet
+        _bet[ix] = max_bet()
+        yield _bet
 
 
 def place_bet_diverse(max_bet=lambda: 100.0):
@@ -129,17 +128,17 @@ def place_bet_diverse(max_bet=lambda: 100.0):
             yield pbr.__next__()
 
 
-def plot_odds_evolution(odds_evolution):
-    h = [x[0] for x in odds_evolution]
-    d = [x[1] for x in odds_evolution]
-    a = [x[2] for x in odds_evolution]
+def plot_odds_evolution(_odds_evolution):
+    h = [x[0] for x in _odds_evolution]
+    d = [x[1] for x in _odds_evolution]
+    a = [x[2] for x in _odds_evolution]
     plt.plot(range(0, len(h)), h, color="red")
     plt.plot(range(0, len(h)), d, color="green")
     plt.plot(range(0, len(h)), a, color="blue")
     plt.show()
 
 
-##### SIMULATION; repeat the experiment 100 times
+# SIMULATION; repeat the experiment X times
 
 table_results = []  # for analysis at the end
 
@@ -176,26 +175,26 @@ for _ in range(0, 100):
     print(probabilities_to_odds(probabilities, set_payout))
 
 
-    def accept_bet_risk(bet, probabilities):
+    def accept_bet_risk(_bet: list, _probabilities: list):
         global payments_per_outcome
         global total_deposits
         global alpha_beta
 
-        assert (0.999 < sum(probabilities) < 1.001)
-        assert (sum(bet) == max(bet) and min(bet) == 0)  # just one is > 0
+        assert (0.999 < sum(_probabilities) < 1.001)
+        assert (sum(_bet) == max(_bet) and min(_bet) == 0)  # just one is > 0
 
-        total_deposits += max(bet)
+        total_deposits += max(_bet)
 
-        payment_per_bet = [pto * b for pto, b in zip(probabilities_to_odds(probabilities, set_payout), bet)]
+        payment_per_bet = [pto * b for pto, b in zip(probabilities_to_odds(_probabilities, set_payout), _bet)]
         total_payment_per_outcome = [ppo + ppb for ppo, ppb in zip(payments_per_outcome, payment_per_bet)]
 
         # because we talk about mutually exclusive events:
         exposure = total_deposits - max(total_payment_per_outcome)
 
-        if (exposure < -total_market_risk):
-            print("Bet Not Accepted" + str(bet))
+        if exposure < -total_market_risk:
+            print("Bet Not Accepted" + str(_bet))
             return  # do not update the payments
-        elif (exposure > 0):
+        elif exposure > 0:
             print("ooops, we are in minus")
 
         payments_per_outcome = total_payment_per_outcome
@@ -244,14 +243,11 @@ for _ in range(0, 100):
 
     plot_odds_evolution(odds_evolution)
 
-#####
 
 # end statistics
-import statistics as stats
 
-
-def print_stats(str, lst: list):
-    print(str + ": mean: {:.2f}, stddev: {:.2f}".format(stats.mean(lst), stats.stdev(lst)))
+def print_stats(string: str, lst: list):
+    print(string + ": mean: {:.2f}, stddev: {:.2f}".format(stats.mean(lst), stats.stdev(lst)))
 
 
 print_stats("Worst case profit: ", [x.worst_case_profit for x in table_results])
